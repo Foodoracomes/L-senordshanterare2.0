@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lösenordshanterare</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+/* Design */
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Outfit',sans-serif;}
+body{height:100vh;display:flex;justify-content:center;align-items:center;background:#0f0f0f;color:white;position:relative;}
+body::before{content:"";position:absolute;width:200%;height:200%;background:linear-gradient(45deg,#0f2027,#203a43,#2c5364,#1c1c1c);animation:moveBg 15s ease infinite;z-index:-2;}
+@keyframes moveBg{0%{transform:translate(0,0)}50%{transform:translate(-25%,-25%)}100%{transform:translate(0,0)}}
+.circle{position:absolute;border-radius:50%;filter:blur(100px);opacity:0.6;animation:float 10s infinite ease-in-out alternate;}
+.circle1{width:300px;height:300px;background:#00f5ff;top:10%;left:15%;}
+.circle2{width:250px;height:250px;background:#ff00c8;bottom:10%;right:15%;}
+@keyframes float{from{transform:translateY(0px)}to{transform:translateY(-40px)}}
+.card{width:100%;max-width:420px;padding:40px 30px;border-radius:30px;background:rgba(255,255,255,0.08);backdrop-filter:blur(25px);border:1px solid rgba(255,255,255,0.1);box-shadow:0 25px 60px rgba(0,0,0,0.6);text-align:center;transition:0.5s;margin-bottom:20px;}
+h2{font-weight:800;letter-spacing:2px;margin-bottom:25px;font-size:24px;}
+.input-group{margin-bottom:15px;text-align:left;}
+.input-group label{font-size:14px;opacity:0.8;}
+.input-group input{width:100%;padding:12px;border-radius:15px;border:none;margin-top:8px;background:rgba(255,255,255,0.15);color:white;font-size:15px;outline:none;transition:0.3s;}
+.input-group input:focus{background:rgba(255,255,255,0.25);box-shadow:0 0 15px rgba(0,255,255,0.6);}
+button{padding:10px 14px;border:none;border-radius:15px;background:linear-gradient(45deg,#00f5ff,#ff00c8);color:white;font-weight:600;font-size:14px;cursor:pointer;transition:0.4s;margin-top:5px;}
+button:hover{transform:scale(1.05);box-shadow:0 10px 30px rgba(255,0,200,0.5);}
+.error{margin-top:15px;color:#ff6b6b;font-size:14px;}
+.dashboard{display:none;flex-direction:column;gap:20px;align-items:center;}
+.password-list{margin-top:15px;text-align:left;width:100%;}
+.password-item{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;background:rgba(255,255,255,0.1);padding:8px 12px;border-radius:12px;}
+.password-item span{overflow-wrap:anywhere;}
+.password-item button{background:#ff6b6b;font-size:12px;padding:5px 10px;margin-left:5px;}
+.password-item button.edit{background:#00f5ff;}
+.logout{margin-top:15px;background:transparent;border:1px solid rgba(255,255,255,0.3);}
+.logout:hover{background:rgba(255,255,255,0.1);}
+.menu{display:none;flex-direction:column;gap:10px;text-align:left;width:100%;}
+</style>
+</head>
+<body>
+<div class="circle circle1"></div>
+<div class="circle circle2"></div>
+
+<!-- Auth Card -->
+<div class="card" id="authCard">
+  <h2>Lösenordshanterare</h2>
+  <div id="authButtons">
+    <button onclick="showLogin()">Logga in</button>
+    <button onclick="showRegister()">Registrera dig</button>
+  </div>
+
+  <div id="loginForm" style="display:none">
+    <div class="input-group">
+      <label>Användarnamn</label>
+      <input type="text" id="loginUser">
+    </div>
+    <div class="input-group">
+      <label>Lösenord</label>
+      <input type="password" id="loginPass">
+    </div>
+    <button onclick="loginUser()">Logga in</button>
+    <div class="error" id="loginError"></div>
+  </div>
+
+  <div id="registerForm" style="display:none">
+    <div class="input-group">
+      <label>Användarnamn</label>
+      <input type="text" id="regUser">
+    </div>
+    <div class="input-group">
+      <label>Lösenord</label>
+      <input type="password" id="regPass">
+    </div>
+    <button onclick="registerUser()">Registrera</button>
+    <div class="error" id="regError"></div>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div class="card dashboard" id="dashboard">
+  <h2>Inloggad som: <span id="currentUserName"></span></h2>
+  <button onclick="showMenu()">Lägg till lösenord</button>
+
+  <div class="menu card" id="menu">
+    <div class="input-group">
+      <label>App / Företag</label>
+      <input type="text" id="appInput">
+    </div>
+    <div class="input-group">
+      <label>Lösenord</label>
+      <input type="text" id="newPassword">
+      <button onclick="generatePassword()">Generera</button>
+    </div>
+    <div class="input-group">
+      <label>Anteckningar (valfritt)</label>
+      <input type="text" id="notesInput">
+    </div>
+    <button onclick="addPassword()">Spara</button>
+    <button onclick="hideMenu()">Avbryt</button>
+  </div>
+
+  <div class="input-group">
+    <label>Sök lösenord</label>
+    <input type="text" id="searchInput" placeholder="Sök app/företag/lösenord" oninput="searchPassword()">
+  </div>
+
+  <div class="password-list" id="passwordList"></div>
+
+  <!-- Adminpanel, gömd som standard -->
+  <div id="adminPanel" style="display:none; margin-top:20px;"></div>
+
+  <button class="logout" onclick="logout()">Logga ut</button>
+</div>
+
+<script>
+// --- Data och server ---
+let users={}, passwords={}, currentUser="";
+
+async function loadData(){
+  const res = await fetch('/load');
+  const data = await res.json();
+  users = data.users || {};
+  passwords = data.passwords || {};
+}
+async function saveData(){
+  await fetch('/save',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({users,passwords})
+  });
+}
+
+// --- Initiera Admin ---
+async function initAdmin(){
+  await loadData();
+  if(!users['Admin']){
+    users['Admin']='Elmer1213';
+    passwords['Admin']=[];
+    await saveData();
+  }
+}
+initAdmin();
+
+// --- Visa formulär ---
+function showLogin(){ document.getElementById('loginForm').style.display='block'; document.getElementById('registerForm').style.display='none'; }
+function showRegister(){ document.getElementById('registerForm').style.display='block'; document.getElementById('loginForm').style.display='none'; }
+
+// --- Login ---
+async function loginUser(){
+  await loadData();
+  const u=document.getElementById('loginUser').value.trim();
+  const p=document.getElementById('loginPass').value.trim();
+  const err=document.getElementById('loginError');
+  if(!users[u]){ err.textContent="Användaren finns inte"; return; }
+  if(users[u]!==p){ err.textContent="Fel lösenord"; return; }
+  currentUser=u;
+  document.getElementById('currentUserName').textContent=currentUser;
+  showDashboard();
+  showAdminPanel();
+}
+
+// --- Registrera ---
+async function registerUser(){
+  await loadData();
+  const u=document.getElementById('regUser').value.trim();
+  const p=document.getElementById('regPass').value.trim();
+  const err=document.getElementById('regError');
+  if(!u||!p){ err.textContent="Fyll i användarnamn och lösenord"; return; }
+  if(users[u]){ err.textContent="Användaren finns redan"; return; }
+  users[u]=p;
+  passwords[u]=[];
+  await saveData();
+  alert("Registrering klar! Logga in nu.");
+  showLogin();
+}
+
+// --- Dashboard ---
+function showDashboard(){
+  document.getElementById('authCard').style.display='none';
+  document.getElementById('dashboard').style.display='flex';
+  document.getElementById('currentUserName').textContent=currentUser;
+  searchPassword();
+}
+
+// --- Logout ---
+function logout(){
+  currentUser="";
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('authCard').style.display='block';
+}
+
+// --- Passwords ---
+function showMenu(){ document.getElementById('menu').style.display='flex'; }
+function hideMenu(){ document.getElementById('menu').style.display='none'; document.getElementById('appInput').value=''; document.getElementById('newPassword').value=''; document.getElementById('notesInput').value=''; }
+
+async function addPassword(){
+  const app=document.getElementById('appInput').value.trim();
+  const pw=document.getElementById('newPassword').value.trim();
+  const notes=document.getElementById('notesInput').value.trim();
+  if(!app||!pw){ alert("App och lösenord krävs"); return; }
+  passwords[currentUser].push({app,pw,notes});
+  await saveData();
+  hideMenu();
+  searchPassword();
+}
+
+// --- Sök ---
+function searchPassword(){
+  const query=document.getElementById('searchInput').value.toLowerCase();
+  const list=document.getElementById('passwordList');
+  list.innerHTML='';
+  if(!currentUser||!passwords[currentUser]) return;
+  if(query==="") return; // tomt → inget
+  const filtered=passwords[currentUser].filter(p=>p.app.toLowerCase().includes(query) || p.pw.toLowerCase().includes(query) || (p.notes&&p.notes.toLowerCase().includes(query)));
+  if(filtered.length===0){ list.textContent="Inga resultat"; return; }
+  filtered.slice(0,3).forEach((p,i)=>{
+    const div=document.createElement('div');
+    div.className='password-item';
+    const span=document.createElement('span');
+    span.textContent=`${p.app} : ${p.pw} ${p.notes? '('+p.notes+')':''}`;
+    div.appendChild(span);
+
+    const editBtn=document.createElement('button');
+    editBtn.textContent='Redigera'; editBtn.className='edit';
+    editBtn.onclick=async()=>{
+      const newApp=prompt("Redigera app/företag",p.app);
+      const newPw=prompt("Redigera lösenord",p.pw);
+      const newNotes=prompt("Redigera anteckningar",p.notes);
+      if(newApp&&newPw){ passwords[currentUser][i]={app:newApp,pw:newPw,notes:newNotes}; await saveData(); searchPassword(); }
+    };
+    div.appendChild(editBtn);
+
+    const delBtn=document.createElement('button');
+    delBtn.textContent='Ta bort';
+    delBtn.onclick=async()=>{ passwords[currentUser].splice(i,1); await saveData(); searchPassword(); }
+    div.appendChild(delBtn);
+
+    list.appendChild(div);
+  });
+}
+
+// --- Generate password ---
+function generatePassword(){
+  const chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+  let pw="";
+  for(let i=0;i<12;i++){ pw+=chars.charAt(Math.floor(Math.random()*chars.length)); }
+  document.getElementById('newPassword').value=pw;
+}
+
+// --- Adminpanel ---
+function showAdminPanel(){
+  const adminDiv=document.getElementById('adminPanel');
+  adminDiv.innerHTML=''; // rensa
+  if(currentUser !== 'Admin'){ adminDiv.style.display='none'; return; }
+
+  adminDiv.style.display='block';
+  const title=document.createElement('h3');
+  title.textContent='Admin: Hantera användare';
+  adminDiv.appendChild(title);
+
+  Object.keys(users).forEach(u=>{
+    if(u==='Admin') return;
+    const btn=document.createElement('button');
+    btn.textContent=`Radera ${u}`;
+    btn.onclick=async()=>{
+      if(confirm(`Radera användare ${u}?`)){
+        delete users[u]; delete passwords[u];
+        await saveData();
+        showAdminPanel();
+      }
+    };
+    adminDiv.appendChild(btn);
+  });
+}
+</script>
+</body>
+</html>
